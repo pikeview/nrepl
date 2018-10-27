@@ -157,19 +157,21 @@
       (println nrepl/version-string)
       (System/exit 0))
     ;; then we check for --connect
-    (let [port (Integer/parseInt (or (options "--port") "0"))
+    (let [port (if (options "--port")
+                 (Integer/parseInt (options "--port"))
+                 (or (config/port) 0))
           host (options "--host")]
       (when (options "--connect")
         (run-repl host port)
         (System/exit 0))
       ;; otherwise we assume we have to start an nREPL server
-      (let [bind (options "--bind")
+      (let [bind (or (options "--bind") (config/bind-address))
             ;; if some handler was explicitly passed we'll use it, otherwise we'll build one
             ;; from whatever was passed via --middleware
             handler (and (options "--handler") (read-string (options "--handler")))
             middleware (and (options "--middleware") (read-string (options "--middleware")))
             handler (if handler (handler) (build-handler middleware))
-            transport (if (options "--transport") (require-and-resolve (options "--transport")))
+            transport (if (or (options "--transport") (config/transport)) (require-and-resolve (options "--transport")))
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
             server (start-server :port port :bind bind :handler handler
                                  :transport-fn transport :greeting-fn greeting-fn)
