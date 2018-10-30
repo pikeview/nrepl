@@ -72,6 +72,12 @@
   [args]
   (map (fn [arg] (or (option-shorthands arg) arg)) args))
 
+(defn- keywordize-options [options]
+  (reduce-kv
+   #(assoc %1 (keyword (clojure.string/replace-first %2 "--" "")) %3)
+   {}
+   options))
+
 (defn- split-args
   "Convert `args` into a map of options + a list of args.
   Unary options are set to true during this transformation.
@@ -156,44 +162,45 @@
     (Integer/parseInt port)
     (config/ack-port)))
 
-(defn- middleware [middleware]
-  (if middleware
-    (read-string middleware)
+(defn- middleware [mw]
+  (if mw
+    (read-string mw)
     (config/middleware)))
 
-(defn- handler [handler]
-  (require-and-resolve
-   (or handler
-       (config/handler))))
+(defn- handler [h]
+  (if h
+    (read-string h)
+    (config/handler)))
 
 (defn -main
   [& args]
-  (let [[options args] (split-args (expand-shorthands args))]
+  (let [[options _args] (split-args (expand-shorthands args))
+        options (keywordize-options options)]
     ;; we have to check for --help first, as it's special
-    (when (options "--help")
+    (when (:help options)
       (display-help)
       (System/exit 0))
-    (when (options "--version")
+    (when (:version options)
       (println nrepl/version-string)
       (System/exit 0))
     ;; then we check for --connect
-    (let [port (port (options "--port"))
-          host (options "--host")]
-      (when (options "--connect")
+    (let [port (port (:port options))
+          host (:host options)]
+      (when (:connect options)
         (run-repl host port)
         (System/exit 0))
       ;; otherwise we assume we have to start an nREPL server
-      (let [bind (or (options "--bind") (config/bind-address))
+      (let [bind (or (:bind options) (config/bind-address))
             ;; if some handler was explicitly passed we'll use it, otherwise we'll build one
             ;; from whatever was passed via --middleware
-            handler (handler (options "--handler"))
-            middleware (middleware (options "--middleware"))
-            handler (if handler (handler) (build-handler middleware))
-            transport (if (or (options "--transport") (config/transport)) (require-and-resolve (options "--transport")))
+            h (handler (:handler options))
+            mw (middleware (:middleware options))
+            h (if h (h) (build-handler mw))
+            transport (if (or (:transport options) (config/transport)) (require-and-resolve (:transport options)))
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
-            server (start-server :port port :bind bind :handler handler
+            server (start-server :port port :bind bind :handler h
                                  :transport-fn transport :greeting-fn greeting-fn)]
-        (when-let [ack-port (ack-port (options "--ack"))]
+        (when-let [ack-port (ack-port (:ack options))]
           (binding [*out* *err*]
             (println (format "ack'ing my port %d to other server running on port %d"
                              (:port server) ack-port)
@@ -209,7 +216,7 @@
           (let [port-file (io/file ".nrepl-port")]
             (.deleteOnExit port-file)
             (spit port-file port))
-          (if (options "--interactive")
-            (run-repl host port (when (options "--color") colored-output))
+          (if (:interactive options)
+            (run-repl host port (when (:color options) colored-output))
             ;; need to hold process open with a non-daemon thread -- this should end up being super-temporary
             (Thread/sleep Long/MAX_VALUE)))))))
