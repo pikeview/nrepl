@@ -156,6 +156,16 @@
     (Integer/parseInt port)
     (config/ack-port)))
 
+(defn- middleware [middleware]
+  (if middleware
+    (read-string middleware)
+    (config/middleware)))
+
+(defn- handler [handler]
+  (require-and-resolve
+   (or handler
+       (config/handler))))
+
 (defn -main
   [& args]
   (let [[options args] (split-args (expand-shorthands args))]
@@ -176,8 +186,8 @@
       (let [bind (or (options "--bind") (config/bind-address))
             ;; if some handler was explicitly passed we'll use it, otherwise we'll build one
             ;; from whatever was passed via --middleware
-            handler (and (options "--handler") (read-string (options "--handler")))
-            middleware (and (options "--middleware") (read-string (options "--middleware")))
+            handler (handler (options "--handler"))
+            middleware (middleware (options "--middleware"))
             handler (if handler (handler) (build-handler middleware))
             transport (if (or (options "--transport") (config/transport)) (require-and-resolve (options "--transport")))
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)

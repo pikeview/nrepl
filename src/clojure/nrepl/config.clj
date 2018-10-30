@@ -39,13 +39,13 @@
     (edn/read (java.io.PushbackReader. r))))
 
 (defn- load-config
-  "Load the configuration `file`.
+  "Load the configuration file indentified by `filename`.
   Return its contents as EDN if the file exists,
   or an empty map otherwise."
-  [file]
-  (let [config-file (io/file config-file)]
-    (if (.exists config-file)
-      (load-edn config-file)
+  [filename]
+  (let [file (io/file filename)]
+    (if (.exists file)
+      (load-edn file)
       {})))
 
 (def config
@@ -85,3 +85,17 @@
   (or
    (System/getenv "NREPL_TRANSPORT")
    (:transport config)))
+
+(defn handler
+  "The default handler for the server."
+  []
+  (or
+   (System/getenv "NREPL_HANDLER")
+   (:handler config)))
+
+(defn middleware
+  "The default middleware vector for the server."
+  []
+  (if-let [env-mw (System/getenv "NREPL_MIDDLEWARE")]
+    (read-string env-mw)
+    (:handler config)))
