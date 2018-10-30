@@ -146,6 +146,16 @@
     "telnet"
     "nrepl"))
 
+(defn- port [port]
+  (if port
+    (Integer/parseInt port)
+    (config/port)))
+
+(defn- ack-port [port]
+  (if port
+    (Integer/parseInt port)
+    (config/ack-port)))
+
 (defn -main
   [& args]
   (let [[options args] (split-args (expand-shorthands args))]
@@ -157,9 +167,7 @@
       (println nrepl/version-string)
       (System/exit 0))
     ;; then we check for --connect
-    (let [port (if (options "--port")
-                 (Integer/parseInt (options "--port"))
-                 (or (config/port) 0))
+    (let [port (port (options "--port"))
           host (options "--host")]
       (when (options "--connect")
         (run-repl host port)
@@ -174,14 +182,14 @@
             transport (if (or (options "--transport") (config/transport)) (require-and-resolve (options "--transport")))
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
             server (start-server :port port :bind bind :handler handler
-                                 :transport-fn transport :greeting-fn greeting-fn)
-            ^java.net.ServerSocket ssocket (:server-socket server)]
-        (when-let [ack-port (options "--ack")]
+                                 :transport-fn transport :greeting-fn greeting-fn)]
+        (when-let [ack-port (ack-port (options "--ack"))]
           (binding [*out* *err*]
-            (println (format "ack'ing my port %d to other server running on port %s"
-                             (.getLocalPort ssocket) ack-port)
-                     (:status (send-ack (.getLocalPort ssocket) (Integer/parseInt ack-port))))))
+            (println (format "ack'ing my port %d to other server running on port %d"
+                             (:port server) ack-port)
+                     (:status (send-ack (:port server) ack-port)))))
         (let [port (:port server)
+              ^java.net.ServerSocket ssocket (:server-socket server)
               host (.getHostName (.getInetAddress ssocket))]
           ;; The format here is important, as some tools (e.g. CIDER) parse the string
           ;; to extract from it the host and the port to connect to

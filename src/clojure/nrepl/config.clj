@@ -63,7 +63,7 @@
   []
   (or
    (System/getenv "NREPL_BIND_ADDRESS")
-   (:bind config)))
+   (:bind-address config)))
 
 (defn port
   "The default port for the server to listen on."
@@ -71,6 +71,13 @@
   (if-let [env-port (System/getenv "NREPL_PORT")]
     (Integer/parseInt env-port)
     (:port config)))
+
+(defn ack-port
+  "The default ack port which the server should use to report its port."
+  []
+  (if-let [env-port (System/getenv "NREPL_ACK_PORT")]
+    (Integer/parseInt env-port)
+    (:ack-port config)))
 
 (defn transport
   "The default transport for the server."
