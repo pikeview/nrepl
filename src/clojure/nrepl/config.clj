@@ -1,9 +1,17 @@
 (ns nrepl.config
   "Server configuration utilities.
-  Some server defaults can be configured via
-  a configuration file or env variables.
-  This namespace provides convenient API to work
-  with them."
+  Some server defaults can be configured via configuration
+  files (local or global) or env variables.  This namespace provides
+  convenient API to work with them.
+
+  The config resolution algorithm is the following:
+
+  * The global config file .nrepl/config.edn is merged with
+  any local config file (.nrepl-config.edn) if present.
+  The values in the local config file take precedence.
+  * If some configuration option is specified by an
+  environment variable, the env variable will take
+  precedence over whatever is in the config files."
   {:author "Bozhidar Batsov"}
   (:require
    [clojure.java.io :as io]
@@ -30,7 +38,11 @@
   (with-open [r (io/reader source)]
     (edn/read (java.io.PushbackReader. r))))
 
-(defn- load-config [file]
+(defn- load-config
+  "Load the configuration `file`.
+  Return its contents as EDN if the file exists,
+  or an empty map otherwise."
+  [file]
   (let [config-file (io/file config-file)]
     (if (.exists config-file)
       (load-edn config-file)
@@ -46,21 +58,23 @@
    (load-config config-file)
    (load-config ".nrepl-config.edn")))
 
-(defn bind-address []
+(defn bind-address
+  "The default bind address for the server."
+  []
   (or
    (System/getenv "NREPL_BIND_ADDRESS")
    (:bind config)))
 
 (defn port
-  "The default port for the server to listen on.
-  First we check the env variable NREPL_PORT,
-  then `config`."
+  "The default port for the server to listen on."
   []
   (if-let [env-port (System/getenv "NREPL_PORT")]
     (Integer/parseInt env-port)
     (:port config)))
 
-(defn transport []
+(defn transport
+  "The default transport for the server."
+  []
   (or
    (System/getenv "NREPL_TRANSPORT")
    (:transport config)))
