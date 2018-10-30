@@ -152,30 +152,17 @@
     "telnet"
     "nrepl"))
 
-(defn- port [port]
-  (if port
-    (Integer/parseInt port)
-    (config/port)))
-
-(defn- ack-port [port]
-  (if port
-    (Integer/parseInt port)
-    (config/ack-port)))
-
-(defn- middleware [mw]
-  (if mw
-    (read-string mw)
-    (config/middleware)))
-
-(defn- handler [h]
-  (if h
-    (read-string h)
-    (config/handler)))
+(defn- ->int [x]
+  (cond
+    (nil? x) x
+    (number? x) x
+    :else (Integer/parseInt x)))
 
 (defn -main
   [& args]
   (let [[options _args] (split-args (expand-shorthands args))
-        options (keywordize-options options)]
+        options (keywordize-options options)
+        options (merge config/config options)]
     ;; we have to check for --help first, as it's special
     (when (:help options)
       (display-help)
@@ -184,23 +171,23 @@
       (println nrepl/version-string)
       (System/exit 0))
     ;; then we check for --connect
-    (let [port (port (:port options))
+    (let [port (->int (:port options))
           host (:host options)]
       (when (:connect options)
         (run-repl host port)
         (System/exit 0))
       ;; otherwise we assume we have to start an nREPL server
-      (let [bind (or (:bind options) (config/bind-address))
+      (let [bind (:bind options)
             ;; if some handler was explicitly passed we'll use it, otherwise we'll build one
             ;; from whatever was passed via --middleware
-            h (handler (:handler options))
-            mw (middleware (:middleware options))
-            h (if h (h) (build-handler mw))
-            transport (if (or (:transport options) (config/transport)) (require-and-resolve (:transport options)))
+            handler (:handler options)
+            middleware (:middleware options)
+            handler (if handler (handler) (build-handler middleware))
+            transport (if (:transport options) (require-and-resolve (:transport options)))
             greeting-fn (if (= transport #'transport/tty) #'transport/tty-greeting)
-            server (start-server :port port :bind bind :handler h
+            server (start-server :port port :bind bind :handler handler
                                  :transport-fn transport :greeting-fn greeting-fn)]
-        (when-let [ack-port (ack-port (:ack options))]
+        (when-let [ack-port (:ack options)]
           (binding [*out* *err*]
             (println (format "ack'ing my port %d to other server running on port %d"
                              (:port server) ack-port)

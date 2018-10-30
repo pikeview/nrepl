@@ -1,17 +1,13 @@
 (ns nrepl.config
   "Server configuration utilities.
-  Some server defaults can be configured via configuration
-  files (local or global) or env variables.  This namespace provides
+  Some server options can be configured via configuration
+  files (local or global).  This namespace provides
   convenient API to work with them.
 
   The config resolution algorithm is the following:
-
-  * The global config file .nrepl/config.edn is merged with
+  The global config file .nrepl/config.edn is merged with
   any local config file (.nrepl-config.edn) if present.
-  The values in the local config file take precedence.
-  * If some configuration option is specified by an
-  environment variable, the env variable will take
-  precedence over whatever is in the config files."
+  The values in the local config file take precedence."
   {:author "Bozhidar Batsov"}
   (:require
    [clojure.java.io :as io]
@@ -39,7 +35,7 @@
     (edn/read (java.io.PushbackReader. r))))
 
 (defn- load-config
-  "Load the configuration file indentified by `filename`.
+  "Load the configuration file identified by `filename`.
   Return its contents as EDN if the file exists,
   or an empty map otherwise."
   [filename]
@@ -57,45 +53,3 @@
   (merge
    (load-config config-file)
    (load-config ".nrepl-config.edn")))
-
-(defn bind-address
-  "The default bind address for the server."
-  []
-  (or
-   (System/getenv "NREPL_BIND_ADDRESS")
-   (:bind-address config)))
-
-(defn port
-  "The default port for the server to listen on."
-  []
-  (if-let [env-port (System/getenv "NREPL_PORT")]
-    (Integer/parseInt env-port)
-    (:port config)))
-
-(defn ack-port
-  "The default ack port which the server should use to report its port."
-  []
-  (if-let [env-port (System/getenv "NREPL_ACK_PORT")]
-    (Integer/parseInt env-port)
-    (:ack-port config)))
-
-(defn transport
-  "The default transport for the server."
-  []
-  (or
-   (System/getenv "NREPL_TRANSPORT")
-   (:transport config)))
-
-(defn handler
-  "The default handler for the server."
-  []
-  (or
-   (System/getenv "NREPL_HANDLER")
-   (:handler config)))
-
-(defn middleware
-  "The default middleware vector for the server."
-  []
-  (if-let [env-mw (System/getenv "NREPL_MIDDLEWARE")]
-    (read-string env-mw)
-    (:middleware config)))
