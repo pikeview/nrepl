@@ -98,4 +98,4 @@
   []
   (if-let [env-mw (System/getenv "NREPL_MIDDLEWARE")]
     (read-string env-mw)
-    (:handler config)))
+    (:middleware config)))
