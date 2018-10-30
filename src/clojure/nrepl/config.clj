@@ -24,13 +24,13 @@
   "nREPL's config file."
   (str config-dir java.io.File/separator "config.edn"))
 
-(defn load-edn
+(defn- load-edn
   "Load edn from an io/reader source (filename or io/resource)."
   [source]
   (with-open [r (io/reader source)]
     (edn/read (java.io.PushbackReader. r))))
 
-(defn load-config [file]
+(defn- load-config [file]
   (let [config-file (io/file config-file)]
     (if (.exists config-file)
       (load-edn config-file)
