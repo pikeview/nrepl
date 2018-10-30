@@ -154,3 +154,62 @@ default use of sockets.  nREPL provides a _transport_ abstraction for
 implementing support for alternative protocols and connection methods.
 Alternative transport implementations are available, and implementing your own
 is not difficult; read more about transports <<design/transports.adoc,here>>.
+
+=== Server Configuration
+
+Starting with version 0.5 you can configure certain aspects of the
+nREPL server's behaviour via configuration files and environment
+variables.
+
+There are two configuration files:
+
+* Global configuration file `.nrepl/config.edn`
+* Local configuration file `nrepl-config.edn`
+
+The global configuration file is useful for setting options that you'd
+like to use for all the nREPL servers that you start (e.g. a common
+`bind-address`, `transport`, `handler`, etc).
+
+The local configuration file should be placed in the directory from
+which you're starting the server (normally the root directory of your
+project). It's purpose it to set project-specific settings (e.g. a common port
+you always want to use with a particular project). Any setting in `.nrepl-config.edn`
+will take precedence over a setting in `.nrepl/config.edn`.
+
+Here's an example configuration file:
+
+.nrepl/config.edn
+[source,clojure]
+----
+{:bind-address "::"
+ :transport    "nrepl.transport/tty"
+ :middleware   ["some.ns/mw1" "some.ns/mw1"]}
+----
+
+And this is an example of a local config file:
+
+.nrepl-config.edn
+[source,clojure]
+----
+{:bind-address "localhost"
+ :port         12345
+ :ack-port     2345b6
+ :handler      "some.ns/awesome-handler"
+ :transport    "nrepl.transport/bencode"}
+----
+
+You can also use environment variable to configure nREPL's behaviour:
+
+* `NREPL_BIND_ADDRESS`
+* `NREPL_PORT`
+* `NREPL_ACK_PORT`
+* `NREPL_TRANSPORT`
+* `NREPL_HANDLER`
+* `NREPL_MIDDLEWARE`
+
+Environment variables have the highest precedence and will override
+anything specified in the global or local server config files.
+
+IMPORTANT: At the time of this writing Boot and Leiningen don't honor the new
+configuration files. They are current leveraged only by the built-in command-line
+interface.
