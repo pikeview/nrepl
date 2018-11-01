@@ -25,6 +25,7 @@
             (flush))})
 
 (defn- run-repl
+  "Connects a simple interactive REPL to `host` and `port`."
   ([host port]
    (run-repl host port nil))
   ([host port {:keys [prompt err out value]
@@ -72,7 +73,9 @@
   [args]
   (map (fn [arg] (or (option-shorthands arg) arg)) args))
 
-(defn- keywordize-options [options]
+(defn- keywordize-options
+  "Convert the --something keys in `options` to keywords like :something."
+  [options]
   (reduce-kv
    #(assoc %1 (keyword (clojure.string/replace-first %2 "--" "")) %3)
    {}
@@ -118,9 +121,10 @@
     (require (symbol (namespace thing)))
     (resolve thing)))
 
-(def ^:private resolve-mw-xf
-  (comp (map require-and-resolve)
-        (keep identity)))
+(defn- resolve-mw-xf [xf]
+  (->> xf
+       (keep identity)
+       (map require-and-resolve)))
 
 (defn- handle-seq-var
   [var]
@@ -129,10 +133,11 @@
       (into [] resolve-mw-xf x)
       [var])))
 
-(def ^:private mw-xf
-  (comp (map symbol)
-        resolve-mw-xf
-        (mapcat handle-seq-var)))
+(defn- mw-xf [xf]
+  (->> xf
+       (mapcat handle-seq-var)
+       resolve-mw-xf
+       (map symbol)))
 
 (defn- ->mw-list
   [middleware-var-strs]
