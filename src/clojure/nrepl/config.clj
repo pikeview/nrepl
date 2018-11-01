@@ -8,7 +8,8 @@
   The global config file .nrepl/config.edn is merged with
   any local config file (.nrepl-config.edn) if present.
   The values in the local config file take precedence."
-  {:author "Bozhidar Batsov"}
+  {:author "Bozhidar Batsov"
+   :added  "0.5.0"}
   (:require
    [clojure.java.io :as io]
    [clojure.edn :as edn]))
