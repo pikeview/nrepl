@@ -174,11 +174,11 @@ via the environment variable `NREPL_CONFIG_DIR`.
 
 The local configuration file should be placed in the directory from
 which you're starting the server (normally the root directory of your
-project). It's purpose it to set project-specific settings (e.g. a common port
+project). Its purpose it to set project-specific settings (e.g. a common port
 you always want to use with a particular project). Any setting in `.nrepl-config.edn`
 will take precedence over a setting in `.nrepl/config.edn`.
 
-Here's an example configuration file:
+Here's an example global configuration file:
 
 .nrepl/config.edn
 [source,clojure]
@@ -188,6 +188,8 @@ Here's an example configuration file:
  :middleware   ["some.ns/mw1" "some.ns/mw1"]}
 ----
 
+IMPORTANT: You can refer to vars either as strings or symbols.
+
 And this is an example of a local config file:
 
 .nrepl-config.edn
@@ -195,7 +197,7 @@ And this is an example of a local config file:
 ----
 {:bind         "localhost"
  :port         12345
- :ack          2345b6
+ :ack          23456
  :handler      "some.ns/awesome-handler"
  :transport    "nrepl.transport/bencode"}
 ----
